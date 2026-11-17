@@ -1,0 +1,25 @@
+# Critique of research/codex.md
+
+Reviewed against VISION.md’s two open questions and research/grok.md. Neither open question is answered here.
+
+## Vendor claims
+
+**Mindbody.** The waitlist cell says movement “can depend on valid pricing or permission to book unpaid,” and that “a sequential acceptance workflow was unverified.” The cited article already has the window split: outside it, the first client with a valid pricing option is auto-added; inside it, automation is off, Continue Auto-add, or First to Claim (SMS to everyone, first “1” wins, two-way SMS required). A payments article checks the option on join and deducts it on promotion, so one option can sit behind several rows. research/grok.md has this. Codex does not.
+
+**Glofox.** High confidence is pinned to the API flow: the first waiter “is automatically booked,” credits or a card are charged, or else “staff intervention is required.” The cited host redirects, and the new path is not found. “How to Set up a Waitlist” (30 July 2026) requires Pay Later for automatic booking and stops it at a branch setting (default 30 minutes, maximum 10 hours). The other mode notifies everyone; the first booking wins. “Limit class bookings” blocks an overlapping auto-add. Pay Later is member-facing unless staff turn that off, so “staff-only cash/pay-later” is a permission. research/grok.md follows the help center. That source is stronger. “Sequential offer timing is unverified” omits the cutoff and the broadcast.
+
+**Momence.** The three modes, the ten-minute default, email without a phone, class-only POS Pay Later, and a setting for when unpaid bookings settle all match the cited FAQs. research/grok.md was too cautious on the schedule: “configurable” is fair, and the page still lists no clock values. Codex misses a line on that same waitlist page: if everyone stays silent, double opt-in ends until the next cancellation. Cutoffs and quiet hours are on that page too.
+
+**Walla.** “Automatic-versus-offer rules unverified” cites a permissions page and an ACH guide. The class policy article says clients are added automatically outside the close window, movement stops after the lock, and staff can still add. A drop-in paid to wait is refunded 15 minutes after the start if they never get in. Overlapping waitlist spots are allowed. A promotion inside the late-cancel window can still draw a fee, waiveable for 24 hours. research/grok.md has this. High confidence fits only “staff may add someone.”
+
+**Vagaro and bsport.** “First-in-line, first-to-book and revenue-based selection” comes from a marketing page. Support documents those modes for appointments; the class article is notify, then book. research/grok.md separates them. bsport’s “High for staff-controlled promotion” cites bulk selection, a staff tool. Feature copy says the next eligible member is booked after a pass check, and a blog treats confirmation requests as advice. Missing a settings page is a fair caveat. Calling staff control the model is not. research/grok.md’s medium auto-book line is marketing-strength only.
+
+**Arketa.** Codex is stronger. “Automatic Waitlisting for Drop in Classes” (13 January 2026) requires a package or subscription and excludes free, donation, and paid drop-in. Turned off, clients are notified and reserve themselves. research/grok.md rated this low-to-medium from an appointment-style link.
+
+## Weight for this studio
+
+Several of Codex’s readings fit the vision better. An unlimited month “has no additional per-class payment to lose,” while research/grok.md folds membership into “credits left.” A check-in tick cannot stand for attendance, money owed, and entitlement together. Door payment still has to separate a single class from buying a pack at the desk. Codex also names a charge that lands after the last seat is gone, a double deduction, a reader sale never typed in, the 18:00 class promoted at 16:30, and the fact that VISION.md sets no late fee or credit forfeiture. research/grok.md’s “cannot be dropped for free” invents that penalty. An email yes needs a hold and a race between accept and expiry. Opt-in to automatic promotion is a real third setting.
+
+Codex underweights the studio in VISION.md: group chat, desk, card reader, one to three rooms. The chat is how a cancellation is cleared today, so an email offer’s delay is operational, not only a link-expiry problem. Momence’s silent round and Glofox’s 30-minute to 10-hour ceiling show how a delay empties the room beside the two-hour cutoff. Quiet hours (Momence uptime, TeamUp’s nightly blackout) matter more than a generic overnight no-show. TeamUp’s FAQ, right about the one-day and 30-minute defaults, still offers that short window to someone without credits, so claim can mean buy. Glofox can block an overlap; Walla allows one. “Overlapping bookings complicate eligibility” names the knot and stops.
+
+Codex’s opening caveat holds: a documented feature is not an adoption rate. The overconfident spots are Glofox’s dead API URL against its help center, Walla’s unused policy page, Vagaro’s appointment modes used as class evidence, and bsport’s bulk tool treated as the promotion model.
