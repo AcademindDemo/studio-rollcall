@@ -1,0 +1,31 @@
+{
+  "name": "studio-rollcall",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=24"
+  },
+  "dependencies": {
+    "@effect/platform-node": "4.0.7",
+    "effect": "4.0.7"
+  },
+  "devDependencies": {
+    "@effect/language-service": "0.87.5",
+    "@effect/vitest": "4.0.7",
+    "@types/node": "24.19.2",
+    "eslint": "10.13.0",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.72.1",
+    "vitest": "5.0.5"
+  },
+  "scripts": {
+    "start": "node src/main.ts",
+    "dev": "node --watch src/main.ts",
+    "typecheck": "tsc --noEmit",
+    "effect:check": "effect-language-service diagnostics --project tsconfig.json",
+    "lint": "eslint --max-warnings 0 .",
+    "test": "vitest run",
+    "gate": "bash scripts/gate.sh"
+  }
+}
