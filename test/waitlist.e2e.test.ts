@@ -11,6 +11,7 @@ import { MemberId } from "../src/domain/Member.ts"
 import { BookingEvents } from "../src/server/contracts/BookingEvents.ts"
 import { Bookings } from "../src/server/contracts/Bookings.ts"
 import { Entitlements } from "../src/server/contracts/Entitlements.ts"
+import { Promotion } from "../src/server/contracts/Promotion.ts"
 import { Waitlist } from "../src/server/contracts/Waitlist.ts"
 import { demoMembers } from "../src/server/Seed.ts"
 import { AppLive, ServerLive } from "../src/server/Server.ts"
@@ -47,6 +48,24 @@ const SlowRefuseAda = Layer.succeed(Entitlements)(Entitlements.of({
   balance: (memberId) => Effect.succeed(new MemberBalance({ memberId, packCreditsLeft: 1 })),
   listBalances: Effect.succeed([])
 }))
+
+// Time passes between a promotion's cutoff check and its allocate: this one moves the
+// clock to exactly two hours before class, then asks Bookings for a waitlist booking.
+const LatePromotion = Layer.succeed(Promotion)(Promotion.of({
+  onSpotFreed: (held, session) => Effect.gen(function*() {
+    const bookings = yield* Bookings
+    const now = yield* DateTime.now
+    yield* TestClock.adjust(session.startsAt.epochMilliseconds - now.epochMilliseconds - twoHoursMs)
+    const result = yield* bookings.allocate(held, session.id, dara, "waitlist").pipe(Effect.result)
+    return Result.isSuccess(result) ? [result.success] : []
+  })
+}))
+
+const lateServer = AppLive.pipe(
+  Layer.provide(LatePromotion),
+  Layer.provideMerge(RefusingAda),
+  Layer.provideMerge(NodeHttpServer.layerTest)
+)
 
 const appServer = AppLive.pipe(
   Layer.provide(PromotionLive),
@@ -203,6 +222,21 @@ describe("waitlist over HTTP", () => {
     assert.strictEqual(after.walkInHolds, 0)
     assert.strictEqual(after.spotsLeft, session.spotsLeft + 1)
   }).pipe(Effect.provide(slowServer)))
+
+  it.effect("a waitlist allocate that reaches the two-hour cutoff books no one and leaves the spot open", () => Effect.gen(function*() {
+    const client = yield* HttpApiClient.make(Api)
+    const session = yield* (yield* Bookings).listing(full)
+    const now = yield* DateTime.now
+    yield* TestClock.adjust(session.startsAt.epochMilliseconds - now.epochMilliseconds - twoHoursMs - 1000)
+    const booking = (yield* (yield* Bookings).roster(full)).find((item) => item.memberId === bo && item.status === "booked")
+    assert.isDefined(booking)
+    yield* client.bookings.cancel({ params: { id: booking.id }, payload: { memberId: bo } })
+    assert.strictEqual((yield* client.bookings.forMember({ params: { id: dara } })).length, 0)
+    const after = (yield* client.studio.listClasses()).find((item) => item.id === full)
+    assert.isDefined(after)
+    assert.strictEqual(after.walkInHolds, 0)
+    assert.strictEqual(after.spotsLeft, session.spotsLeft + 1)
+  }).pipe(Effect.provide(lateServer)))
 
   it.effect("when every waiter is skipped the spot is open for online booking", () => Effect.gen(function*() {
     const client = yield* HttpApiClient.make(Api)

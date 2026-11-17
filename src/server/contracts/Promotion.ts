@@ -10,7 +10,7 @@ import type { LockHeld } from "./StudioLock.ts"
 // `allocate` error is handled per waiting entry, as plan.md part 2 says for the first three.
 //   NoCredit -> entry `skipped`, continue.  AlreadyBooked -> entry `promoted`, continue.
 //   ClassFull -> stop, the class is full again.  MemberNotFound -> entry `skipped`, continue.
-//   ClassNotFound, ClassStarted -> stop; nothing can be booked for this class.
+//   ClassNotFound, ClassStarted, PromotionClosed -> stop; nothing can be booked for this class.
 // It needs Bookings (for `allocate`) at call time rather than at layer build, because Bookings
 // itself depends on Promotion: the Bookings implementation provides itself, e.g.
 // `promotion.onSpotFreed(held, session).pipe(Effect.provideService(Bookings, self))`.

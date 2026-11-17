@@ -59,6 +59,13 @@ export class ClassStarted extends Schema.TaggedError<ClassStarted>()(
   { httpApiStatus: 409 }
 ) {}
 
+// Waitlist promotion stops 2 hours before class (decisions/0002). Only promotion sees it.
+export class PromotionClosed extends Schema.TaggedError<PromotionClosed>()(
+  "PromotionClosed",
+  { classId: ClassId },
+  { httpApiStatus: 409 }
+) {}
+
 export class AlreadyCheckedIn extends Schema.TaggedError<AlreadyCheckedIn>()(
   "AlreadyCheckedIn",
   { bookingId: BookingId },

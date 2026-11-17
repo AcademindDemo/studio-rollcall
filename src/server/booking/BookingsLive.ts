@@ -2,7 +2,9 @@ import { DateTime, Effect, Layer, Ref } from "effect"
 import { BookedClass, Booking, BookingId } from "../../domain/Booking.ts"
 import { ClassListing } from "../../domain/ClassSession.ts"
 import type { ClassId, ClassSession } from "../../domain/ClassSession.ts"
-import { AlreadyBooked, AlreadyCheckedIn, BookingNotActive, BookingNotFound, ClassFull, ClassStarted, NotYourBooking } from "../../domain/Errors.ts"
+import type { BookingSource } from "../../domain/Booking.ts"
+import { AlreadyBooked, AlreadyCheckedIn, BookingNotActive, BookingNotFound, ClassFull, ClassStarted, NotYourBooking, PromotionClosed } from "../../domain/Errors.ts"
+import type { MemberId } from "../../domain/Member.ts"
 import { BookingCancelled, BookingConfirmed } from "../../domain/Events.ts"
 import { BookingEvents } from "../contracts/BookingEvents.ts"
 import { Bookings } from "../contracts/Bookings.ts"
@@ -11,7 +13,11 @@ import { Entitlements } from "../contracts/Entitlements.ts"
 import { Promotion } from "../contracts/Promotion.ts"
 import { Schedule } from "../contracts/Schedule.ts"
 import { StudioLock } from "../contracts/StudioLock.ts"
+import type { LockHeld } from "../contracts/StudioLock.ts"
 import { scheduleSeed } from "../seed/schedule.ts"
+
+// Waitlist promotion stops, and a freed spot is held for walk-ins, from 2 hours before class.
+const promotionCutoffMs = 2 * 60 * 60 * 1000
 
 export const BookingsLive = Layer.effect(Bookings, Effect.gen(function*() {
   const schedule = yield* Schedule
@@ -49,10 +55,18 @@ export const BookingsLive = Layer.effect(Bookings, Effect.gen(function*() {
       walkInHolds, spotsLeft: session.capacity - active - walkInHolds
     })
   }
-  const allocate: Bookings["Service"]["allocate"] = (held, classId, memberId, source) => Effect.gen(function*() {
+  // `gate` runs on the same clock reading that stamps `bookedAt`.
+  const place = <E>(
+    held: LockHeld,
+    classId: ClassId,
+    memberId: MemberId,
+    source: BookingSource,
+    gate: (session: ClassSession, now: DateTime.Utc) => Effect.Effect<void, E>
+  ) => Effect.gen(function*() {
     const session = yield* schedule.getClass(classId)
     const now = yield* DateTime.now
     if (session.startsAt.epochMilliseconds <= now.epochMilliseconds) return yield* new ClassStarted({ classId })
+    yield* gate(session, now)
     yield* directory.getMember(memberId)
     const current = yield* Ref.get(state)
     if (current.bookings.some(({ booking: b }) => b.classId === classId && b.memberId === memberId && b.status === "booked")) {
@@ -65,10 +79,15 @@ export const BookingsLive = Layer.effect(Bookings, Effect.gen(function*() {
     yield* events.publish(held, new BookingConfirmed({ booking }))
     return booking
   })
+  const allocate: Bookings["Service"]["allocate"] = (held, classId, memberId, source) =>
+    place(held, classId, memberId, source, (session, now) =>
+      source === "waitlist" && session.startsAt.epochMilliseconds - now.epochMilliseconds <= promotionCutoffMs
+        ? Effect.fail(new PromotionClosed({ classId }))
+        : Effect.void)
   const self: Bookings["Service"] = Bookings.of({
     get,
     allocate,
-    book: (input) => lock.withLock((held) => allocate(held, input.classId, input.memberId, "member")),
+    book: (input) => lock.withLock((held) => place(held, input.classId, input.memberId, "member", () => Effect.void)),
     cancel: (input) => lock.withLock((held) => Effect.gen(function*() {
       const entry = yield* getEntry(input.bookingId)
       const booking = entry.booking
@@ -89,7 +108,7 @@ export const BookingsLive = Layer.effect(Bookings, Effect.gen(function*() {
       yield* Ref.update(state, (current) => ({
         bookings: current.bookings.map((b) => b.booking.id === booking.id
           ? new BookedClass({ booking: cancelled, classSession: b.classSession }) : b),
-        holds: remaining <= 2 * 60 * 60 * 1000
+        holds: remaining <= promotionCutoffMs
           ? new Map(current.holds).set(session.id, (current.holds.get(session.id) ?? 0) + 1)
           : current.holds
       }))

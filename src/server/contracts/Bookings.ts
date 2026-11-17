@@ -20,7 +20,8 @@ import type {
   ClassStarted,
   MemberNotFound,
   NoCredit,
-  NotYourBooking
+  NotYourBooking,
+  PromotionClosed
 } from "../../domain/Errors.ts"
 import type { MemberId } from "../../domain/Member.ts"
 import type { LockHeld } from "./StudioLock.ts"
@@ -36,13 +37,15 @@ export class Bookings extends Context.Service<Bookings, {
   checkIn(input: CheckInInput): Effect.Effect<Booking, BookingNotFound | BookingNotActive | AlreadyCheckedIn>
 
   // Step inside the caller's lock: the checks and writes of `book` for a given source, so it
-  // fails with the same errors as `book`. This is what promotion uses.
+  // fails with the errors of `book`. This is what promotion uses. A `waitlist` allocate also
+  // fails with PromotionClosed 2 hours or less before start, judged by the same clock reading
+  // that stamps `bookedAt`, so no waitlist booking lands inside the cutoff.
   allocate(
     held: LockHeld,
     classId: ClassId,
     memberId: MemberId,
     source: BookingSource
-  ): Effect.Effect<Booking, ClassNotFound | MemberNotFound | ClassStarted | AlreadyBooked | ClassFull | NoCredit>
+  ): Effect.Effect<Booking, ClassNotFound | MemberNotFound | ClassStarted | PromotionClosed | AlreadyBooked | ClassFull | NoCredit>
 
   // Reads.
   get(bookingId: BookingId): Effect.Effect<Booking, BookingNotFound>
