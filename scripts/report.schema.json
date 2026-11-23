@@ -1,0 +1,32 @@
+{
+	"title": "Worker report",
+	"description": "The one JSON object a worker ends its session with. Saved as .work/reports/<part>.json.",
+	"type": "object",
+	"additionalProperties": false,
+	"required": ["status", "summary", "filesChanged", "checks", "openQuestions"],
+	"properties": {
+		"status": {
+			"description": "done: the part is committed on the worker's branch and `npm run check` is green there; the lead merges it into main afterwards. blocked: the worker stopped; openQuestions says on what.",
+			"enum": ["done", "blocked"]
+		},
+		"summary": {
+			"description": "What was built and committed on the branch, or where and why the worker stopped. A few sentences.",
+			"type": "string",
+			"minLength": 1
+		},
+		"filesChanged": {
+			"description": "Repo-relative paths the part added or changed, e.g. src/csv.ts. Empty if nothing was changed.",
+			"type": "array",
+			"items": { "type": "string", "minLength": 1 }
+		},
+		"checks": {
+			"description": "Result of the last `npm run check`: green, red, or not run.",
+			"enum": ["green", "red", "not run"]
+		},
+		"openQuestions": {
+			"description": "Questions only the owner or the lead can answer. Required to be non-empty when status is blocked.",
+			"type": "array",
+			"items": { "type": "string", "minLength": 1 }
+		}
+	}
+}
