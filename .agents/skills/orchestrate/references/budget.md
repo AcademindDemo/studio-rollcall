@@ -6,11 +6,13 @@ Read this when step 3 of the orchestrate skill needs a choice.
 
 - Parts that touch different files, with any shared contract already landed, can run at the same
   time. Tightly connected code stays in one worker.
-- Every worker on the same account draws on the same usage as the lead. Start every part that
-  waits for nothing at once, up to the worker budget the owner set. Without one, ask; on a
-  Claude Pro plan the budget is one worker at a time.
-- `scripts/launch.sh` starts every part you name at once, so name only as many as the budget
-  allows. `scripts/status.sh` says which workers still run.
+- How many run at once is your call: as many independent parts as make sense for the work. The
+  owner can always set a number, and that wins.
+- Every worker on the same account draws on the same usage as the lead. On a small plan a few
+  workers at once can use it up quickly: three app workers used up a Claude Pro window in about
+  half an hour.
+- `scripts/launch.sh` starts every part you name at once, so name only the ones you mean to run
+  together. `scripts/status.sh` says which workers still run.
 
 ## Which tool, model and effort
 

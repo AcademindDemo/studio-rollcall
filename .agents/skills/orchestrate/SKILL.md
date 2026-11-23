@@ -24,8 +24,9 @@ own started by a script, in a worktree and branch of its own, in whichever tool 
    which belong to other parts, the shared contract word for word, the checks it runs, who lands
    the change, what it decides itself and where it stops and reports blocked, and the report it
    ends with. Show the owner the briefs before the workers start.
-3. **Start.** Start every part that waits for nothing at once, up to the worker budget the owner
-   set: `scripts/launch.sh <tool>:<part> ...`, or `scripts/worker.sh <tool> <part>` for one.
+3. **Start.** Start as many parts that wait for nothing at once as make sense for the work,
+   unless the owner set a number: `scripts/launch.sh <tool>:<part> ...`, or
+   `scripts/worker.sh <tool> <part>` for one.
    Run it in the background and stay free for the owner. A part that waits starts only once the
    part it needs has landed. Choose the tool, the model and the effort per part where it starts,
    never in the brief: [references/budget.md](references/budget.md).
