@@ -48,20 +48,24 @@ case $tool in
     claude -p "$message" --resume "$session" --output-format json --json-schema "$(cat "$schema")" \
       --permission-mode dontAsk \
       --allowedTools "Edit Write Bash(git add *) Bash(git commit *) Bash(npm run check)" \
-      > "$report"
-    result=$(jq '.structured_output // empty' "$report")
+      > "$report" || true
+    result=$(jq '.structured_output // empty' "$report" 2> /dev/null || true)
     ;;
   codex)
     rm -f "$report"
+    gitdir=$(git rev-parse --absolute-git-dir)
+    common=$(git rev-parse --path-format=absolute --git-common-dir)
     codex exec --json --output-schema "$schema" -o "$report" --sandbox workspace-write --trust \
-      resume "$session" "$message" < /dev/null >> "$events"
+      -c sandbox_workspace_write.network_access=true \
+      -c "sandbox_workspace_write.writable_roots=[\"$gitdir\",\"$common/objects\",\"$common/refs\",\"$common/logs\"]" \
+      resume "$session" "$message" < /dev/null >> "$events" || true
     result=$(cat "$report" 2> /dev/null || true)
     ;;
   grok)
     grok -p "$message" --resume "$session" --output-format json --json-schema "$(cat "$schema")" \
       --always-approve --sandbox workspace --deny "Bash(git push *)" --no-auto-update \
-      > "$report"
-    result=$(jq '.structuredOutput // empty' "$report")
+      > "$report" || true
+    result=$(jq '.structuredOutput // empty' "$report" 2> /dev/null || true)
     ;;
 esac
 

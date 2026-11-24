@@ -5,8 +5,8 @@
 # message, and the run's result saved as .work/reports/<part>.json. Its process id goes to
 # .work/pids/<part>.pid, where scripts/status.sh finds it. It fails when the worker sends no
 # report, whatever the tool's exit code says. Run it from the repository.
-# Codex commits only with a rule in ~/.codex/rules/default.rules that allows git add and
-# git commit outside its sandbox: prefix_rule(pattern = ["git", ["add", "commit"]]).
+# Codex runs in its workspace-write sandbox, with the worktree's git directory and the shared
+# objects, refs and logs writable so it can commit, and loopback networking on for tests.
 # Grok's sandbox on Linux runs inside bubblewrap: sudo apt install bubblewrap. The script checks
 # for it before it makes the worktree.
 set -euo pipefail
@@ -47,23 +47,27 @@ case $tool in
     claude -p "$(cat "$brief")" --output-format json --json-schema "$(cat "$schema")" \
       --permission-mode dontAsk \
       --allowedTools "Edit Write Bash(git add *) Bash(git commit *) Bash(npm run check)" \
-      > "$report"
-    session=$(jq -r '.session_id // empty' "$report")
-    result=$(jq '.structured_output // empty' "$report")
+      > "$report" || true
+    session=$(jq -r '.session_id // empty' "$report" 2> /dev/null || true)
+    result=$(jq '.structured_output // empty' "$report" 2> /dev/null || true)
     ;;
   codex)
     rm -f "$report"
+    gitdir=$(git rev-parse --absolute-git-dir)
+    common=$(git rev-parse --path-format=absolute --git-common-dir)
     codex exec --json --output-schema "$schema" -o "$report" --sandbox workspace-write --trust \
-      "$(cat "$brief")" < /dev/null > "$events"
-    session=$(jq -r 'select(.type == "thread.started") | .thread_id' "$events" | head -n 1)
+      -c sandbox_workspace_write.network_access=true \
+      -c "sandbox_workspace_write.writable_roots=[\"$gitdir\",\"$common/objects\",\"$common/refs\",\"$common/logs\"]" \
+      "$(cat "$brief")" < /dev/null > "$events" || true
+    session=$(jq -r 'select(.type == "thread.started") | .thread_id' "$events" 2> /dev/null | head -n 1 || true)
     result=$(cat "$report" 2> /dev/null || true)
     ;;
   grok)
     grok -p "$(cat "$brief")" --output-format json --json-schema "$(cat "$schema")" \
       --always-approve --sandbox workspace --deny "Bash(git push *)" --no-auto-update \
-      > "$report"
-    session=$(jq -r '.sessionId // empty' "$report")
-    result=$(jq '.structuredOutput // empty' "$report")
+      > "$report" || true
+    session=$(jq -r '.sessionId // empty' "$report" 2> /dev/null || true)
+    result=$(jq '.structuredOutput // empty' "$report" 2> /dev/null || true)
     ;;
 esac
 
